@@ -1,136 +1,223 @@
-// src/DraggableList.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-
-const ItemTypes = {
-  NOTE: 'note',
-};
-
-const DraggableListItem = ({ id, text, index, moveItem, children }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const toggleOpen = () => {
-    setIsOpen(!isOpen);
-  };
-
-  const [, drag] = useDrag({
-    type: ItemTypes.NOTE,
-    item: { id, index },
-  });
-
-  const [, drop] = useDrop({
-    accept: ItemTypes.NOTE,
-    hover: (draggedItem) => {
-      if (draggedItem.index !== index) {
-        moveItem(draggedItem.index, index);
-        draggedItem.index = index;
-      }
-    },
-  });
-
-  return (
-    <div>
-      <div
-        onClick={toggleOpen}
-        ref={(node) => drag(drop(node))}
-        style={{
-          cursor: 'pointer',
-          padding: '8px',
-          border: '1px solid #ccc',
-          marginBottom: '8px',
-        }}
-      >
-        {text}
-      </div>
-      {isOpen && children && (
-        <div style={{ marginLeft: '20px' }}>
-          {children.map((child, childIndex) => (
-            <DraggableListItem
-              key={child.id}
-              id={child.id}
-              text={child.label}
-              index={childIndex}
-              moveItem={(from, to) => moveItem(index, from, to)}
-              children={child.children} same 
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
+import DraggableListItem from './DraggableListItem';
 
 const DraggableList = () => {
-  const [items, setItems] = useState([
+  const [items, setItems] = useState([]);
+  const data = [
     {
+      id: 1,
       position: 1,
+      level: 1,
       label: '0-0',
-      parentId: '0',
-      children:[
+      parentId: null,
+      child: [
         {
+          id: 2,
           position: 1,
+          level: 2,
           label: '0-0-0',
-          parentId: 1, 
-          children: [
+          parentId: 1,
+          child: [
             {
+              id: 3,
               position: 1,
+              level: 3,
               label: '0-0-0-0',
-              parentId:
+              parentId: 2,
+              archived: 'false'
             },
             {
+              id: 4,
               position: 2,
+              level: 3,
               label: '0-0-0-1',
-              parentId:
+              parentId: 2,
+              archived: 'false'
             },
             {
+              id: 5,
               position: 3,
+              level: 3,
               label: '0-0-0-2',
-              parentId:
+              parentId: 2,
+              archived: 'false'
             }
           ]
         },
         {
-          position: "1.2",
+          id: 6,
+          position: 2,
+          level: 2,
           label: '0-0-1',
-          parentId:
+          parentId: 1,
+          archived: 'false'
         },
         {
-          position: '1.3',
+          id: 7,
+          position: 3,
+          level: 2,
           label: '0-0-2',
-          parentId:
+          parentId: 1,
+          archived: 'false'
         }
       ]
     },
     {
-      position: '2',
+      id: 8,
+      position: 2,
+      level: 1,
       label: '0-1',
-      parentId:
+      parentId: null,
+      archived: 'false'
     }
-    // Your items array here
-  ]);
+]
+  
+  useEffect(()=>{
+    setItems(value=>[...data])
+  },[])
+  
+  
+  const handleDropElement=(dropObj,dragObj,items, removedDragIndex)=>{
+    let dropId = dropObj.id
+    let dragId = dragObj.id
+    let sameParent = dragObj.parentId == dropObj.parentId
+    let updatedItems = [...items]
+    for(let i=0;i<updatedItems.length;i++){
+      if(updatedItems[i].id==dropId){
+        console.log("handleDropElement condition matched");
+        let parentId = updatedItems[i].parentId
+        dragObj.parentId = parentId
+        console.log("removedDragIndex===>",removedDragIndex,i,sameParent);
+        if(sameParent && removedDragIndex<=i)
+          updatedItems.splice(i+1,0,dragObj)
+        else{
+          updatedItems.splice(i,0,dragObj)
+        }
+        return updatedItems
+      }
+      if(updatedItems[i].child){
+        updatedItems[i].child = handleDropElement(dropObj,dragObj,updatedItems[i].child,removedDragIndex)
+      }
+    } 
+    return updatedItems;
+    
+  }
+  const addElement = (item, id, items) => {
+    let updatedItems = [...items]
 
-  const moveItem = (parentIndex, fromIndex, toIndex) => {
-    const updatedItems = [...items];
-    const parent = updatedItems[parentIndex];
+    for (let i = 0; i < updatedItems.length; i++) {
+      if (updatedItems[i].id == id) {
+        console.log("condition mathed");
+        updatedItems.splice(i+1,0,item)
+        setItems(updatedItems)
+        return updatedItems;
+      }
+      updatedItems[i].child && addElement(item,id, updatedItems[i].child)
+    }
+    return updatedItems
+  }
 
-    const [movedItem] = parent.children.splice(fromIndex, 1);
-    parent.children.splice(toIndex, 0, movedItem);
+  const addChildElement = (child, items) => {
+    console.log("indside add element", child);
+    console.log("child ===> ", child);
+    console.log("items ===> ", items);
+    let updatedItems = [...items]
 
+    for (let i = 0; i < updatedItems.length; i++) {
+      if (updatedItems[i].id == child.parentId) {
+        console.log("condition mathed");
+        if (!updatedItems[i].child) {
+          updatedItems[i].child = []
+        }
+        updatedItems[i].child = [child, ...updatedItems[i].child]
+        setItems(updatedItems)
+        return updatedItems;
+      }
+      updatedItems[i].child && addChildElement(child, updatedItems[i].child)
+    }
+    console.log("latest updated items===> ", items);
+    return updatedItems
+  }
+
+  
+
+  const removeElement = (id, parentId, items) => {
+    console.log("removeElement -- items===>", items);
+    let updatedItems = [...items]
+    let removedObject = {}
+    let removedObjectIndex = null
+
+    for (let i = 0; i < updatedItems.length; i++) {
+      if (updatedItems[i].id == id) {
+        console.log("condition mathed");
+        [removedObject] = updatedItems.splice(i, 1)
+        console.log("removedObject==>", removedObject);
+        removedObjectIndex = i
+        console.log("removedDragIndex just after assigned===>",removedObjectIndex);
+        return {updatedItems:[...updatedItems], removedObject:removedObject, removedObjectIndex: removedObjectIndex };
+      }
+      if (updatedItems[i].child){
+        let tempObj = updatedItems[i].child && removeElement(id, parentId, updatedItems[i].child)
+        if(tempObj){
+          updatedItems[i].child = tempObj.updatedItems
+          removedObject = tempObj.removedObject
+          removedObjectIndex = tempObj.removedObjectIndex
+        }
+      }
+    }
+    console.log("removedDragIndex just after assigned2===>",removedObjectIndex);    
+    return {updatedItems:[...updatedItems], removedObject:removedObject, removedObjectIndex: removedObjectIndex }
+  }
+
+  const editItem = (e, id, items) => {
+    let updatedItems = [...items]
+
+    for (let i = 0; i < updatedItems.length; i++) {
+      if (updatedItems[i].id == id) {
+        console.log("condition mathed");
+        updatedItems[i].label = e.target.elements['element-input'].value
+
+        return updatedItems;
+      }
+      if (updatedItems[i].child)
+        updatedItems[i].child = updatedItems[i].child && editItem(e, id, updatedItems[i].child)
+    }
+    return updatedItems
+
+  }
+
+
+
+  const moveItem = (draggedItem,dropItem,items) => {
+    let fromId = draggedItem.id
+    let toId = dropItem.id
+    let dragParentId = draggedItem.parentId
+    let dropParentId = dropItem.dragParentId
+    console.log(`fromId: ${fromId}, toId: ${toId}, dragParentId : ${dragParentId}, dropParentId: ${dropParentId}`);
+    let updatedItems = [...items];
+    const removeDrag = removeElement(fromId,dragParentId,updatedItems)
+    console.log("removeDrag", removeDrag);
+    updatedItems = [...removeDrag.updatedItems]
+    updatedItems = handleDropElement(dropItem,removeDrag.removedObject,updatedItems, removeDrag.removedObjectIndex)
     setItems(updatedItems);
   };
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div style={{ width: '300px', margin: 'auto' }}>
-        {items.map((item, index) => (
+        {items.map((item) => (
           <DraggableListItem
-            key={item.id}
-            id={item.id}
-            text={item.label}
-            index={index}
-            moveItem={(from, to) => moveItem(index, from, to)}
-            children={item.children || []}
+            key={Math.floor(Math.random() * 1000000)}
+            item = {item}
+            moveItem={(draggedItem,dropItem) => moveItem(draggedItem,dropItem,items)}
+            items={items}
+            setItems={(updatedItems) => setItems(value => updatedItems)}
+            addChildElement={(child) => addChildElement(child, items)}
+            removeElement={(id, parentId) => removeElement(id, parentId, items)}
+            editItem={(e, id) => editItem(e, id, items)}
+            addElement={(item,id)=>addElement(item,id,items)}
           />
         ))}
       </div>
