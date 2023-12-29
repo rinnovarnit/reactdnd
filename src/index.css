@@ -11,3 +11,16 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+.pauseCircleFilled-tags{
+  width: 50px !important;
+  height: 50px !important ;
+}
+.shadow-container {
+  width : 250px;
+  height: 5px;
+  background-color: rgb(192, 192, 192);
+}
+.child-shadow {
+  margin-left: 100px;
+  background-color: red;
+}

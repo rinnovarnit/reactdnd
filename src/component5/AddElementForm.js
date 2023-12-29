@@ -1,3 +1,4 @@
+import { Button, Form, Input } from 'antd';
 import React, { useEffect, useState } from 'react';
 
 const AddElementForm = (props)=>{
@@ -9,9 +10,9 @@ const AddElementForm = (props)=>{
     return(
         <div>
           <form onSubmit={(e)=>handleForm(e)}>
-            <input onChange={(e)=>setInputValue(e.target.value)} id='element-input' placeholder='Enter text' type='text' value={inputValue|| null}></input>
+            <Input onChange={(e)=>setInputValue(e.target.value)} id='element-input' placeholder='Enter text' type='text' value={inputValue|| null}></Input>
             <button type='submit'>save</button>
-            <button onClick={()=>setShowInput(false)}>cancel</button>    
+            <Button onClick={()=>setShowInput(false)}>cancel</Button>    
           </form>
         </div>
     )
